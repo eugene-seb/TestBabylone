@@ -2,56 +2,29 @@ const createScene =  () => {
     const scene = new BABYLON.Scene(engine);
 
     /**** Set camera and light *****/
-    const camera = buildCamera(scene);
-    const light = buildLight(scene);
-
-    const ground = buildGround(scene);
-
-    const village = buildVillage();
-
-    //const music = buildMusic(scene);
+    const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(0, 0, 0));
+    camera.attachControl(canvas, true);
+    const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
+    
+    buildDwellings();
     
     return scene;
 }
 
-//============== Build Functions =======================================
+/******Build Functions***********/
+const buildDwellings = () => {
+    const ground = buildGround();
 
-const buildVillage = (scene) => {
+    const detached_house = buildHouse(1);
+    detached_house.rotation.y = -Math.PI / 16;
+    detached_house.position.x = -6.8;
+    detached_house.position.z = 2.5;
 
-    const positions = listPositions();
+    const semi_house = buildHouse(2);
+    semi_house .rotation.y = -Math.PI / 16;
+    semi_house.position.x = -4.5;
+    semi_house.position.z = 3;
 
-    const village = placeHouse(listPositions, scene);
-
-}
-
-/**
- * arrange the houses on the scene by sing the list of positions
- */
-const placeHouse = (listPositions, scene) => {
-
-    const originalHouse = buildOriginalHouse(scene);
-
-    //Create instances from the first two that were built 
-    const houses = [];
-    for (let i = 0; i < listPositions.length; i++) {
-        if (listPositions[i][0] === 1) {
-            houses[i] = originalHouse[0].createInstance("house" + i);
-        }
-        else {
-            houses[i] = originalHouse[1].createInstance("house" + i);
-        }
-        houses[i].rotation.y = listPositions[i][1];
-        houses[i].position.x = listPositions[i][2];
-        houses[i].position.z = listPositions[i][3];
-    }
-
-    return houses;
-}
-
-/**
- * Set the all the position for the village configuration
- */
-const listPositions = () => {
     const places = []; //each entry is an array [house type, rotation, x, z]
     places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
     places.push([2, -Math.PI / 16, -4.5, 3 ]);
@@ -71,52 +44,47 @@ const listPositions = () => {
     places.push([2, -Math.PI / 3, 5.25, 2 ]);
     places.push([1, -Math.PI / 3, 6, 4 ]);
 
-    return places;
+    //Create instances from the first two that were built 
+    const houses = [];
+    for (let i = 0; i < places.length; i++) {
+        if (places[i][0] === 1) {
+            houses[i] = detached_house.createInstance("house" + i);
+        }
+        else {
+            houses[i] = semi_house.createInstance("house" + i);
+        }
+        houses[i].rotation.y = places[i][1];
+        houses[i].position.x = places[i][2];
+        houses[i].position.z = places[i][3];
+    }
 }
 
-/**
- * Create the original buildings
- */
-const buildOriginalHouse = (scene) => {
-    const simpleHouse = buildhouse(1, scene);
-    simpleHouse.rotation.y = -Math.PI / 16;
-    simpleHouse.position.x = -6.8;
-    simpleHouse.position.z = 2.5;
+const buildGround = () => {
+    //color
+    const groundMat = new BABYLON.StandardMaterial("groundMat");
+    groundMat.diffuseColor = new BABYLON.Color3(0, 1, 0);
 
-    const doubleHouse = buildhouse(2, scene);
-    doubleHouse.rotation.y = -Math.PI / 16;
-    doubleHouse.position.x = -6.8;
-    doubleHouse.position.z = 2.5;
-
-    return [simpleHouse, doubleHouse];
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:15, height:16});
+    ground.material = groundMat;
 }
 
+const buildHouse = (width) => {
+    const box = buildBox(width);
+    const roof = buildRoof(width);
 
-const buildCamera = (scene) => {
-    const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 40, new BABYLON.Vector3(0, 0, 0), scene);
-    camera.attachControl(canvas, true);
-
-    return camera;
+    return BABYLON.Mesh.MergeMeshes([box, roof], true, false, null, false, true);
 }
 
-const buildLight = (scene) => {
-    const light = new BABYLON.HemisphericLight("light", BABYLON.Vector3(1, 1, 0), scene);
+const buildBox = (width) => {
+    //texture
+    const boxMat = new BABYLON.StandardMaterial("boxMat");
+    if (width == 2) {
+       boxMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/semihouse.png") 
+    }
+    else {
+        boxMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/cubehouse.png");   
+    }
 
-    return light;
-}
-
-const buildGround = (scene) => {
-    const ground = BABYLON.CreateGround("Ground", {width: 40, height: 40}, scene);
-
-    const groundMaterial = new BABYLON.StandardMaterial("ground", scene);
-    groundMaterial.diffuseTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/floor.png", scene);
-    ground.material = groundMaterial;
-
-    return ground;
-}
-
-
-const buildBox = (width, scene) => {
     //options parameter to set different images on each side
     const faceUV = [];
     if (width == 2) {
@@ -124,7 +92,8 @@ const buildBox = (width, scene) => {
         faceUV[1] = new BABYLON.Vector4(0.0, 0.0, 0.4, 1.0); //front face
         faceUV[2] = new BABYLON.Vector4(0.4, 0, 0.6, 1.0); //right side
         faceUV[3] = new BABYLON.Vector4(0.4, 0, 0.6, 1.0); //left side
-    } else {
+    }
+    else {
         faceUV[0] = new BABYLON.Vector4(0.5, 0.0, 0.75, 1.0); //rear face
         faceUV[1] = new BABYLON.Vector4(0.0, 0.0, 0.25, 1.0); //front face
         faceUV[2] = new BABYLON.Vector4(0.25, 0, 0.5, 1.0); //right side
@@ -132,47 +101,25 @@ const buildBox = (width, scene) => {
     }
     // top 4 and bottom 5 not seen so not set
 
-    // the box
-    const box = new BABYLON.MeshBuilder.CreateBox("box", {faceUV: faceUV, wrap: true}, scene);
-    box.position = new BABYLON.Vector3(0, 0.5, 0);
-
-    //texture
-    const boxMaterial = new BABYLON.StandardMaterial("box materail", scene);
-    if (width == 2) {
-       boxMaterial.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/semihouse.png") 
-    } else {
-        boxMaterial.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/cubehouse.png");   
-    }
-    box.material = boxMaterial;
+    /**** World Objects *****/
+    const box = BABYLON.MeshBuilder.CreateBox("box", {width: width, faceUV: faceUV, wrap: true});
+    box.material = boxMat;
+    box.position.y = 0.5;
 
     return box;
 }
 
-const buildRoof = (width, scene) => {
-    const roofMaterial = new BABYLON.StandardMaterial("roof material", scene);
-    roofMaterial.diffuseTexture = new BABYLON.Texture("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQwmb79RG714Aby8dJhxAN767G4iy0F4Ri_dg&usqp=CAU", scene);
+const buildRoof = (width) => {
+    //texture
+    const roofMat = new BABYLON.StandardMaterial("roofMat");
+    roofMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/roof.jpg");
 
-    const roof = new BABYLON.CreateCylinder("Roof", {diameter: 1.3, height: 1.2, tessellation: 3}, scene);
+    const roof = BABYLON.MeshBuilder.CreateCylinder("roof", {diameter: 1.3, height: 1.2, tessellation: 3});
+    roof.material = roofMat;
     roof.scaling.x = 0.75;
     roof.scaling.y = width;
-    roof.position = new BABYLON.Vector3(0, 1.22, 0);
-    roof.rotation = new BABYLON.Vector3(0, 0, Math.PI / 2);
-    roof.material = roofMaterial;
+    roof.rotation.z = Math.PI / 2;
+    roof.position.y = 1.22;
 
     return roof;
-}
-
-const buildhouse = (width, scene) => {
-    const box = buildBox(width, scene);
-    const roof = buildRoof(width, scene);
-
-    const house = new BABYLON.Mesh.MergeMeshes([box, roof], true, false, null, false, true);
-
-    return house;
-}
-
-const buildMusic = (scene) => {
-    const music = new BABYLON.Sound("Sound", "sounds/cellolong.wav", scene, null, { loop: true, autoplay: true });
-
-    return music;
 }
