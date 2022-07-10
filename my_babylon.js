@@ -6,14 +6,18 @@ const createScene =  () => {
     camera.attachControl(canvas, true);
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
     
-    buildDwellings();
+    buildVillage();
     
     return scene;
 }
 
-/******Build Functions***********/
-const buildDwellings = () => {
+const buildVillage = () => {
     const ground = buildGround();
+
+    placedHouseInVillage();
+}
+
+const buildoriginalHouse = () => {
 
     const detached_house = buildHouse(1);
     detached_house.rotation.y = -Math.PI / 16;
@@ -24,6 +28,14 @@ const buildDwellings = () => {
     semi_house .rotation.y = -Math.PI / 16;
     semi_house.position.x = -4.5;
     semi_house.position.z = 3;
+
+    return [detached_house, semi_house];
+}
+
+/******Build Functions***********/
+const placedHouseInVillage = () => {
+    
+    const originalHouse = buildoriginalHouse();
 
     const places = []; //each entry is an array [house type, rotation, x, z]
     places.push([1, -Math.PI / 16, -6.8, 2.5 ]);
@@ -48,10 +60,10 @@ const buildDwellings = () => {
     const houses = [];
     for (let i = 0; i < places.length; i++) {
         if (places[i][0] === 1) {
-            houses[i] = detached_house.createInstance("house" + i);
+            houses[i] = originalHouse[0].createInstance("house" + i);
         }
         else {
-            houses[i] = semi_house.createInstance("house" + i);
+            houses[i] = originalHouse[1].createInstance("house" + i);
         }
         houses[i].rotation.y = places[i][1];
         houses[i].position.x = places[i][2];
